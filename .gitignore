@@ -1,0 +1,46 @@
+# Build output
+bin/
+obj/
+out/
+[Bb]uild/
+[Bb]uilds/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# ASP.NET / .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.db
+*.db-shm
+*.db-wal
+*.pdb
+*.cache
+*.log
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Local secrets / environment
+appsettings.Development.json
+appsettings.Local.json
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# JetBrains Rider / IntelliJ
+*.iml
+.idea/
