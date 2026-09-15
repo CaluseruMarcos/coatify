@@ -151,24 +151,160 @@ DeleteDevice()
 
 ## User Story
 
-**Als Entwickler möchte ich Dependencies über Dependency Injection bereitstellen.**
+**Als Entwickler möchte ich Dependencies über Dependency Injection bereitstellen, damit Klassen ihre Abhängigkeiten nicht selbst erstellen müssen.**
 
-### Aufgabe
+## Ziel
 
-Registriere:
+Lerne und implementiere **Constructor Injection** mit dem .NET Dependency-Injection-System.
+
+Die Anwendung soll folgende Abhängigkeiten automatisch auflösen können:
 
 ```text
 IDeviceService → DeviceService
 IDeviceRepository → DeviceRepository
 ```
 
-Verwende Constructor Injection.
+## Aufgabe
 
-### Fertig wenn
+### 1. Repository-Interface erstellen
 
-* [ ] Kein `new DeviceService()` im Controller
-* [ ] Dependencies werden injiziert
-* [ ] Anwendung startet ohne DI-Fehler
+Erstelle in `Coatify.Application`:
+
+```text
+Interfaces/
+└── IDeviceRepository.cs
+```
+
+```csharp
+public interface IDeviceRepository
+{
+}
+```
+
+Das Interface darf zunächst leer sein.
+
+### 2. Repository implementieren
+
+Erstelle in `Coatify.Infrastructure`:
+
+```text
+Repositories/
+└── DeviceRepository.cs
+```
+
+```csharp
+public class DeviceRepository : IDeviceRepository
+{
+}
+```
+
+`Coatify.Infrastructure` benötigt dafür eine Project Reference auf `Coatify.Application`.
+
+### 3. Dependency in `DeviceService` injizieren
+
+`DeviceService` soll das Repository **nicht selbst erstellen**.
+
+❌ Nicht:
+
+```csharp
+public class DeviceService : IDeviceService
+{
+    private readonly DeviceRepository _repository = new DeviceRepository();
+}
+```
+
+✅ Stattdessen:
+
+```csharp
+public class DeviceService : IDeviceService
+{
+    private readonly IDeviceRepository _repository;
+
+    public DeviceService(IDeviceRepository repository)
+    {
+        _repository = repository;
+    }
+}
+```
+
+Damit bekommt `DeviceService` sein Repository von außen.
+
+### 4. Dependencies in `Program.cs` registrieren
+
+In `Coatify.Api/Program.cs`:
+
+```csharp
+builder.Services.AddScoped<IDeviceService, DeviceService>();
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+```
+
+Damit weiß .NET:
+
+```text
+IDeviceService
+      ↓
+DeviceService
+
+IDeviceRepository
+      ↓
+DeviceRepository
+```
+
+### 5. DI-Auflösung testen
+
+Beim Start der Anwendung soll .NET `DeviceService` automatisch erstellen können.
+
+Der Ablauf:
+
+```text
+DeviceService
+      ↓
+benötigt IDeviceRepository
+      ↓
+DI-System sucht Registrierung
+      ↓
+DeviceRepository
+      ↓
+DeviceService wird erstellt
+```
+
+## Projektstruktur
+
+Nach diesem Schritt sollte die Struktur ungefähr so aussehen:
+
+```text
+Coatify
+├── Coatify.Domain
+│
+├── Coatify.Application
+│   ├── DTOs
+│   ├── Interfaces
+│   │   ├── IDeviceService.cs
+│   │   └── IDeviceRepository.cs
+│   └── Services
+│       └── DeviceService.cs
+│
+├── Coatify.Infrastructure
+│   └── Repositories
+│       └── DeviceRepository.cs
+│
+└── Coatify.Api
+    └── Program.cs
+```
+
+## Fertig wenn
+
+* `IDeviceRepository` existiert
+* `DeviceRepository` implementiert `IDeviceRepository`
+* `DeviceService` erhält `IDeviceRepository` über den Constructor
+* Kein `new DeviceRepository()` in `DeviceService`
+* `IDeviceService → DeviceService` ist registriert
+* `IDeviceRepository → DeviceRepository` ist registriert
+* Anwendung startet ohne DI-Fehler
+* `DeviceService` kann vom DI-System erstellt werden
+
+> **Hinweis:** Der Controller kommt erst in Schritt 5. Dort wird `IDeviceService` ebenfalls per Constructor Injection in den Controller injiziert.
+
 
 ---
 

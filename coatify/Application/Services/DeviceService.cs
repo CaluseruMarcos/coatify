@@ -1,11 +1,20 @@
+using coatify.Infrastructure.Repositories;
+
 namespace coatify.Application;
 using coatify.Domain;
 public class DeviceService : IDeviceService
 
 
+
     
 {
     readonly DeviceResponse _response= new DeviceResponse();
+    private DeviceRepository _deviceRepository;
+    
+    DeviceService(DeviceRepository deviceRepository)
+    {
+        this._deviceRepository=deviceRepository;
+    }
     public Task<DeviceResponse> CreateDevice(Guid Id, string Name, string Status)
     {
         
