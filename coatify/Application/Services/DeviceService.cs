@@ -4,14 +4,11 @@ namespace coatify.Application;
 using coatify.Domain;
 public class DeviceService : IDeviceService
 
-
-
-    
 {
     readonly DeviceResponse _response= new DeviceResponse();
-    private DeviceRepository _deviceRepository;
+    private readonly IDeviceRepository _deviceRepository;
     
-    DeviceService(DeviceRepository deviceRepository)
+    public DeviceService(IDeviceRepository deviceRepository)
     {
         this._deviceRepository=deviceRepository;
     }
@@ -71,4 +68,5 @@ public class DeviceService : IDeviceService
        return Task.FromResult(selectedDevice);
        
     }
+    
 }

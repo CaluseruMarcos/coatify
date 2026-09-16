@@ -1,19 +1,25 @@
+using coatify.Api.Controllers;
+
 namespace coatify.Api;
 
 using coatify.Application;
 using coatify.Infrastructure.Repositories;
 
-class Program
-{
-    public static void Main(string[] args)
+ class Api{
+    public static void run(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+       
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
         builder.Services.AddScoped<IDeviceService, DeviceService>();
         builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+        var app = builder.Build();
+        DevicesControllers devicesControllers = new DevicesControllers(app, new DeviceService(new DeviceRepository()));
+        devicesControllers.MapRoutes(app);
+        app.Run();
 }
 
 
