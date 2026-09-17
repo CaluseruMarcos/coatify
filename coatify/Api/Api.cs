@@ -1,7 +1,7 @@
 using coatify.Api.Controllers;
 
 namespace coatify.Api;
-
+using coatify.Api.ErrorHandling;
 using coatify.Application;
 using coatify.Infrastructure.Repositories;
 
@@ -16,6 +16,28 @@ using coatify.Infrastructure.Repositories;
         
         builder.Services.AddLogging();
         var app = builder.Build();
+        app.UseExceptionHandler(errorApp =>
+        {
+            errorApp.Run(async context =>
+            {
+                var exception = context.Features
+                    .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()
+                    ?.Error;
+
+                if (exception is null)
+                    return;
+
+                var error = GlobalExceptionHandler.HandleException(exception);
+
+                context.Response.StatusCode = (int)error.StatusCode;
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    status = (int)error.StatusCode,
+                    message = error.Message
+                });
+            });
+        });
         var logger = app.Services.GetRequiredService<ILogger<DeviceService>>();
         var deviceService = new DeviceService(
             new DeviceRepository(),

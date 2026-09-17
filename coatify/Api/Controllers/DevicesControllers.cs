@@ -33,7 +33,7 @@ public class DevicesControllers : Controller
             return Results.Ok(devices);
         });
 
-        app.MapGet("/api/device/{id:guid}", async ( Guid id) =>
+        app.MapGet("/api/device/{id}", async ( Guid id) =>
         {
             
            var devicesById= await deviceService.GetDevice(id);
@@ -47,13 +47,13 @@ public class DevicesControllers : Controller
             return Results.Ok(devices);
         });
         
-        app.MapPut("/api/device/{id:guid}", async (Guid id, string name, string status) =>
+        app.MapPut("/api/device/{id}", async (Guid id, string name, string status) =>
         {
             var devices = await deviceService.UpdateDevice(id, name, status);
             return Results.Ok(devices);
         });
 
-        app.MapDelete("/api/device/{id:guid}", async (Guid id) =>
+        app.MapDelete("/api/device/{id}", async (Guid id) =>
         {
             var devices = await deviceService.DeleteDevice(id);
             return Results.Ok(devices);
