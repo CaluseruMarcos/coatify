@@ -37,6 +37,7 @@ public class DevicesControllers : Controller
         {
             
            var devicesById= await deviceService.GetDevice(id);
+           
             return Results.Ok(devicesById);
         });
 

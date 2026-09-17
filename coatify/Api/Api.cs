@@ -14,9 +14,14 @@ using coatify.Infrastructure.Repositories;
         builder.Services.AddScoped<IDeviceService, DeviceService>();
         builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
         
-        
+        builder.Services.AddLogging();
         var app = builder.Build();
-        DevicesControllers devicesControllers = new DevicesControllers(app, new DeviceService(new DeviceRepository()));
+        var logger = app.Services.GetRequiredService<ILogger<DeviceService>>();
+        var deviceService = new DeviceService(
+            new DeviceRepository(),
+            logger
+        );
+        DevicesControllers devicesControllers = new DevicesControllers(app,deviceService);
         devicesControllers.MapRoutes(app);
         
         
