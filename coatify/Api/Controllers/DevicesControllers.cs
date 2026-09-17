@@ -19,35 +19,40 @@ public class DevicesControllers : Controller
 
     public void MapRoutes(WebApplication app)
     {
-        app.MapGet("/api/devices", async (List<Guid> ids) =>
+        app.MapGet("/api/devices", async () =>
         {
           
-          
-            var devices = await deviceService.GetDevices(ids);
+            List<Guid> randomGuid = new List<Guid>();
+            randomGuid.Add(Guid.NewGuid());
+            randomGuid.Add(Guid.NewGuid());
+            randomGuid.Add(Guid.NewGuid());
+
+            
+            var devices = await deviceService.GetDevices(randomGuid);
 
             return Results.Ok(devices);
         });
 
-        app.MapGet("/api/devices/{id}", async ( Guid id) =>
+        app.MapGet("/api/device/{id:guid}", async ( Guid id) =>
         {
             
            var devicesById= await deviceService.GetDevice(id);
             return Results.Ok(devicesById);
         });
 
-        app.MapPost("/api/devices", async (Guid id, string name, string status) =>
+        app.MapPost("/api/device", async (Guid id, string name, string status) =>
         {
             var devices = await deviceService.CreateDevice(id, name, status);
             return Results.Ok(devices);
         });
         
-        app.MapPut("/api/devices/{id}", async (Guid id, string name, string status) =>
+        app.MapPut("/api/device/{id:guid}", async (Guid id, string name, string status) =>
         {
             var devices = await deviceService.UpdateDevice(id, name, status);
             return Results.Ok(devices);
         });
 
-        app.MapDelete("/api/devices/{id}", async (Guid id) =>
+        app.MapDelete("/api/device/{id:guid}", async (Guid id) =>
         {
             var devices = await deviceService.DeleteDevice(id);
             return Results.Ok(devices);
