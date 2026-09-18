@@ -1,5 +1,7 @@
 using coatify.Application.Interfaces;
+using coatify.Infrastructure.DbContext;
 using coatify.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace coatify.Application.Services;
 using coatify.Domain;
@@ -9,21 +11,37 @@ public class DeviceService : IDeviceService
     readonly DeviceResponse _response= new DeviceResponse();
     private readonly IDeviceRepository _deviceRepository;
     private readonly ILogger<DeviceService> _logger;
-    
-    public DeviceService(IDeviceRepository deviceRepository, ILogger<DeviceService> logger)
+    private readonly CoatifyContext _dbContext;
+    public DeviceService(IDeviceRepository deviceRepository, ILogger<DeviceService> logger, CoatifyContext dbContext)
     {
         this._deviceRepository=deviceRepository;
         this._logger=logger;
+        _dbContext = dbContext;
     }
-    public Task<DeviceResponse> CreateDevice(Guid Id, string Name, string Status)
+    public async Task<Device> CreateDevice(Guid Id, string Name, string Status)
     {
         
         _logger.LogInformation($"Creating device with id: {Id}, name: {Name}, status: {Status}");
-        DeviceResponse response = this._response;
-        response.Id = Id;
-        response.Name = Name;
-        response.Status = Status;
-        return Task.FromResult(response);
+
+        Device device = new Device();
+        DeviceType deviceType = new DeviceType();
+        deviceType.Id = Guid.NewGuid();
+        deviceType.Name = "Example Device Type";
+        deviceType.Description = "This is an example device type";
+        device.Id = Id;
+        device.Name = Name;
+        device.Status = Status;
+        device.SerialNumber = Guid.NewGuid().ToString();
+        device.CreatedAt = DateTime.UtcNow;
+        device.DeviceType = deviceType;
+       
+        
+        var responseDevice = _dbContext.Devices.Add(device);
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation($"Device created with id: {responseDevice.Entity.Id}, name: {responseDevice.Entity.Name}, status: {responseDevice.Entity.Status}");
+        
+        
+        return Task.FromResult(responseDevice.Entity).Result;
       
     }
 

@@ -7,6 +7,5 @@ using coatify.Application.Services;
 public abstract class Controller
 {
   
-   protected DeviceService deviceService;
     public WebApplication App { get; set; }
 }

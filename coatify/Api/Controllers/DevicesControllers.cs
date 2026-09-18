@@ -4,6 +4,7 @@ using Controller = coatify.Api.Controllers.AbstractClass.Controller;
 
 namespace coatify.Api.Controllers;
 using coatify.Application;
+using coatify.Application.Interfaces;
 using coatify.Infrastructure.Repositories;
 using coatify.Application.Services;
 
@@ -11,16 +12,16 @@ public class DevicesControllers : Controller
 {
    
     
-    public DevicesControllers( WebApplication app, DeviceService deviceService) : base()
+    public DevicesControllers( WebApplication app) : base()
     {
         
         App = app;
-        this.deviceService = deviceService;
+
     }
 
     public void MapRoutes(WebApplication app)
     {
-        app.MapGet("/api/devices", async () =>
+        app.MapGet("/api/devices", async (IDeviceService deviceService) =>
         {
           
             List<Guid> randomGuid = new List<Guid>();
@@ -34,7 +35,7 @@ public class DevicesControllers : Controller
             return Results.Ok(devices);
         });
 
-        app.MapGet("/api/device/{id}", async ( Guid id) =>
+        app.MapGet("/api/device/{id}", async (Guid id, IDeviceService deviceService) =>
         {
             
            var devicesById= await deviceService.GetDevice(id);
@@ -42,19 +43,19 @@ public class DevicesControllers : Controller
             return Results.Ok(devicesById);
         });
 
-        app.MapPost("/api/device", async (Guid id, string name, string status) =>
+        app.MapPost("/api/device", async (Guid id, string name, string status, IDeviceService deviceService) =>
         {
             var devices = await deviceService.CreateDevice(id, name, status);
             return Results.Ok(devices);
         });
         
-        app.MapPut("/api/device/{id}", async (Guid id, string name, string status) =>
+        app.MapPut("/api/device/{id}", async (Guid id, string name, string status, IDeviceService deviceService) =>
         {
             var devices = await deviceService.UpdateDevice(id, name, status);
             return Results.Ok(devices);
         });
 
-        app.MapDelete("/api/device/{id}", async (Guid id) =>
+        app.MapDelete("/api/device/{id}", async (Guid id, IDeviceService deviceService) =>
         {
             var devices = await deviceService.DeleteDevice(id);
             return Results.Ok(devices);

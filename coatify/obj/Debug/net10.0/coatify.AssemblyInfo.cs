@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("coatify")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+363172a3abb6ef182172e7384921896894c2eaee")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a9205bd2d4f02ebb35f6ec65a26d743ac1a89615")]
 [assembly: System.Reflection.AssemblyProductAttribute("coatify")]
 [assembly: System.Reflection.AssemblyTitleAttribute("coatify")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

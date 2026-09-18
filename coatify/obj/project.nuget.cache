@@ -1,12 +1,17 @@
 {
   "version": 2,
-  "dgSpecHash": "7X6sGwhx59M=",
+  "dgSpecHash": "By5EbFq5StQ=",
   "success": true,
   "projectFilePath": "/home/marcos/Desktop/projects/c#-expermiental/coatify/coatify/coatify.csproj",
   "expectedPackageFiles": [
     "/home/marcos/.nuget/packages/microsoft.aspnetcore.openapi/10.0.12/microsoft.aspnetcore.openapi.10.0.12.nupkg.sha512",
+    "/home/marcos/.nuget/packages/microsoft.entityframeworkcore/10.0.4/microsoft.entityframeworkcore.10.0.4.nupkg.sha512",
+    "/home/marcos/.nuget/packages/microsoft.entityframeworkcore.abstractions/10.0.4/microsoft.entityframeworkcore.abstractions.10.0.4.nupkg.sha512",
+    "/home/marcos/.nuget/packages/microsoft.entityframeworkcore.analyzers/10.0.4/microsoft.entityframeworkcore.analyzers.10.0.4.nupkg.sha512",
+    "/home/marcos/.nuget/packages/microsoft.entityframeworkcore.relational/10.0.4/microsoft.entityframeworkcore.relational.10.0.4.nupkg.sha512",
     "/home/marcos/.nuget/packages/microsoft.openapi/2.12.0/microsoft.openapi.2.12.0.nupkg.sha512",
-    "/home/marcos/.nuget/packages/npgsql/10.0.3/npgsql.10.0.3.nupkg.sha512"
+    "/home/marcos/.nuget/packages/npgsql/10.0.3/npgsql.10.0.3.nupkg.sha512",
+    "/home/marcos/.nuget/packages/npgsql.entityframeworkcore.postgresql/10.0.1/npgsql.entityframeworkcore.postgresql.10.0.1.nupkg.sha512"
   ],
   "logs": []
 }

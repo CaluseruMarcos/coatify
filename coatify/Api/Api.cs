@@ -1,3 +1,5 @@
+using coatify.Infrastructure.DbContext;
+using Microsoft.EntityFrameworkCore;
 using coatify.Api.Controllers;
 
 namespace coatify.Api;
@@ -14,6 +16,9 @@ using coatify.Application.Interfaces;
         var builder = WebApplication.CreateBuilder(args);
         
         builder.Services.AddOpenApi();
+        builder.Services.AddDbContext<CoatifyContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString("Coatify")
+                ?? throw new InvalidOperationException("Connection string Coatify is missing.")));
         builder.Services.AddScoped<IDeviceService, DeviceService>();
         builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
         
@@ -41,12 +46,7 @@ using coatify.Application.Interfaces;
                 });
             });
         });
-        var logger = app.Services.GetRequiredService<ILogger<DeviceService>>();
-        var deviceService = new DeviceService(
-            new DeviceRepository(),
-            logger
-        );
-        DevicesControllers devicesControllers = new DevicesControllers(app, deviceService);
+        DevicesControllers devicesControllers = new DevicesControllers(app);
         devicesControllers.MapRoutes(app);
         
         
