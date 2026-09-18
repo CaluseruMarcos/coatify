@@ -1,0 +1,22 @@
+# Lokale Entwicklungsdatenbank: docker compose up -d
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: coatify
+      POSTGRES_PASSWORD: coatify
+      POSTGRES_DB: coatify
+    ports:
+      - "127.0.0.1:1234:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coatify -d coatify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:

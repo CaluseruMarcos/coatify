@@ -1,4 +1,5 @@
-namespace coatify.Application;
+namespace coatify.Application.Interfaces;
+using Npgsql;
 
 public interface IDeviceService
 {

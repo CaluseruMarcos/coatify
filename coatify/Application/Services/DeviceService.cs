@@ -1,6 +1,7 @@
+using coatify.Application.Interfaces;
 using coatify.Infrastructure.Repositories;
 
-namespace coatify.Application;
+namespace coatify.Application.Services;
 using coatify.Domain;
 public class DeviceService : IDeviceService
 

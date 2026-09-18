@@ -2,8 +2,11 @@ using coatify.Api.Controllers;
 
 namespace coatify.Api;
 using coatify.Api.ErrorHandling;
-using coatify.Application;
+using coatify.Application.Interfaces;
+using coatify.Application.Services;
 using coatify.Infrastructure.Repositories;
+using coatify.Application.Interfaces;
+
 
  class Api{
     public static void run(string[] args)
@@ -43,7 +46,7 @@ using coatify.Infrastructure.Repositories;
             new DeviceRepository(),
             logger
         );
-        DevicesControllers devicesControllers = new DevicesControllers(app,deviceService);
+        DevicesControllers devicesControllers = new DevicesControllers(app, deviceService);
         devicesControllers.MapRoutes(app);
         
         

@@ -5,6 +5,7 @@ using Controller = coatify.Api.Controllers.AbstractClass.Controller;
 namespace coatify.Api.Controllers;
 using coatify.Application;
 using coatify.Infrastructure.Repositories;
+using coatify.Application.Services;
 
 public class DevicesControllers : Controller
 {
