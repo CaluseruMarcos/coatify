@@ -16,7 +16,9 @@ public class GlobalExceptionHandler : ErrorResponse
 
         switch (ex)
         {
-            case ArgumentNullException:
+            case BadHttpRequestException badRequest:
+                return new GlobalExceptionHandler((HttpStatusCode)badRequest.StatusCode, badRequest.Message);
+            case ArgumentException:
                 return new GlobalExceptionHandler(HttpStatusCode.BadRequest, ex.Message);
             case KeyNotFoundException:
                 return new GlobalExceptionHandler(HttpStatusCode.NotFound, ex.Message);

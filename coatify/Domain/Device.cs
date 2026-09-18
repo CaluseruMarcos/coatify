@@ -8,6 +8,8 @@ public class Device
 
     public string SerialNumber { get;  set; }
 
+    public Guid DeviceTypeId { get; set; }
+
     public DeviceType DeviceType { get;  set; }
 
     public string Status { get;  set; }

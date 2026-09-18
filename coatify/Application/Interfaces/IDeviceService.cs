@@ -5,9 +5,9 @@ using Npgsql;
 
 public interface IDeviceService
 {
-    Task<Device> CreateDevice(Guid Id, string Name, string Status);
+    Task<DeviceResponse> CreateDevice(CreateDeviceRequest request);
     Task<DeviceResponse> GetDevice(Guid id);
     Task<List<DeviceResponse>> GetDevices(List<Guid> ids);
-    Task<DeviceResponse> UpdateDevice(Guid Id, string Name, string Status);
+    Task<DeviceResponse> UpdateDevice(Guid id, UpdateDeviceRequest request);
     Task<DeviceResponse> DeleteDevice(Guid Id);
 }
