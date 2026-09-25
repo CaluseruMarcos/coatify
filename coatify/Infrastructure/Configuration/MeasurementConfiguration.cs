@@ -11,7 +11,9 @@ public class MeasurementConfiguration : IEntityTypeConfiguration<Measurement>
         builder.ToTable("Measurements");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).IsRequired();
-        builder.Property(x => x.DeviceId).IsRequired();
+        builder.HasIndex(x => x.DeviceId);
+        builder.HasIndex(x => x.Timestamp);
+        
         
         
     }
