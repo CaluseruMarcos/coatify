@@ -16,4 +16,9 @@
         <PackageReference Include="Npgsql" Version="10.0.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Coatify.Tests\obj\Coatify.Tests.csproj.nuget.dgspec.json" />
+      <_ContentIncludedByDefault Remove="Coatify.Tests\obj\project.assets.json" />
+    </ItemGroup>
+
 </Project>
