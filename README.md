@@ -20,44 +20,70 @@ Das angestrebte Ergebnis: Ein Administrator kann ein Gerät über die API regist
 
 ## Aufbau
 
-Aktuell sind die Bereiche als Ordner in einem gemeinsamen ASP.NET-Core-Projekt organisiert:
+Aktuell sind die Anwendungsbereiche als Ordner in einem ASP.NET-Core-Projekt organisiert. Daneben gibt es ein eigenes xUnit-Testprojekt:
 
 ```text
 coatify.sln
+compose.yaml           # Lokaler PostgreSQL-Container
 coatify/
 ├── Api/              # HTTP-Endpunkte und Startkonfiguration
 ├── Application/      # Services, DTOs und Interfaces
 ├── Domain/           # Geräte, Gerätetypen, Messwerte und Benutzer
-├── Infrastructure/   # Grundlage für den späteren Datenzugriff
+├── Infrastructure/   # EF-Core-Context und Datenzugriff
+├── Migrations/       # Versionierte Datenbankschema-Änderungen
 ├── Program.cs        # Einstiegspunkt
 └── USER_STORY.md     # Lernaufgaben und Abnahmekriterien
+Coatify.Tests/         # xUnit-Tests und Testdatenbank-Helfer
+AGENTS.md              # Projekthinweise für Coding-Agents
 ```
 
 Im Lernplan ist vorgesehen, diese Bereiche in separate Projekte aufzuteilen. Die Domain soll unabhängig von ASP.NET Core und EF Core bleiben. Die Application-Schicht soll den Datenzugriff über Interfaces ansprechen, deren Implementierungen in Infrastructure liegen.
 
 ## Aktueller Stand
 
-Das Projekt befindet sich im Aufbau und verwendet .NET 10 mit ASP.NET Core. Erste Geräte-Endpunkte, Datenmodelle, DTOs sowie Service- und Repository-Grundgerüste sind vorhanden.
+Das Projekt befindet sich im Aufbau und verwendet .NET 10, ASP.NET Core, EF Core und PostgreSQL. Geräte-Endpunkte für Anlegen, Lesen, Aktualisieren und Löschen sind vorhanden. `DeviceService` greift dafür auf `CoatifyContext` zu; das Repository ist noch ein Grundgerüst.
 
-Die Geräteoperationen arbeiten derzeit mit einfachen Antwortobjekten. Es gibt noch keine dauerhafte Speicherung und keine echte Suche nach gespeicherten Geräten. Das Repository ist bisher ein Grundgerüst. Auch die vollständige Validierung, zentrale Fehlerbehandlung, strukturiertes Logging und Unit Tests gehören zu den weiteren Lernschritten.
+Die erste EF-Core-Migration beschreibt das Datenbankschema. Das Testprojekt enthält unter anderem einen Datenbanktest für `CreateDevice` und zwei Testfälle für `DeviceService.GetDevice`. Weitere Tests und Teile der Fehlerbehandlung sind noch im Aufbau.
 
-EF Core und PostgreSQL sind geplant. Blazor für eine Benutzeroberfläche und Azure sollen später folgen.
+Blazor für eine Benutzeroberfläche und Azure sollen später folgen.
 
 ## Lokal starten
 
-Voraussetzung ist das **.NET-10-SDK**. Im Ordner mit `coatify.sln` ausführen:
+Voraussetzungen sind das **.NET-10-SDK** und **Docker Compose**. Im Ordner mit `coatify.sln` zunächst PostgreSQL starten und die Verbindungszeichenfolge setzen:
+
+```bash
+docker compose up -d --wait postgres
+export ConnectionStrings__Coatify='Host=127.0.0.1;Port=1234;Database=coatify;Username=coatify;Password=coatify'
+```
+
+Auf einer neuen Datenbank das Schema mit den EF-Core-Migrationen erstellen:
+
+```bash
+cd coatify
+dotnet tool restore
+dotnet ef database update
+cd ..
+```
+
+Danach die API starten:
 
 ```bash
 dotnet run --project coatify/coatify.csproj --launch-profile http
 ```
 
-Die API ist anschließend unter `http://localhost:5105` erreichbar. Ein erster Aufruf ist:
+Die API ist anschließend unter `http://localhost:5105` erreichbar. `GET /api/device/{id}` liest ein Gerät; `GET /api/devices` erwartet mindestens eine `ids`-Query-Parameter-ID. Ohne IDs liefert der Listen-Endpunkt `400 Bad Request`.
 
-```text
-http://localhost:5105/api/devices
+Die Verbindungsdaten oben stammen aus `compose.yaml` und sind nur für die lokale Entwicklung gedacht. Die API erstellt das Schema beim Start nicht selbst; auf einer neuen Datenbank ist der Migrationsschritt erforderlich.
+
+Es gibt noch keine Weboberfläche. Die Endpunkte lassen sich mit curl, Postman oder Riders HTTP-Client aufrufen.
+
+## Tests ausführen
+
+```bash
+bash Coatify.Tests/run-postgres-tests.sh
 ```
 
-Aktuell wird keine Datenbank zum Starten benötigt. Es gibt noch keine Weboberfläche; die Endpunkte lassen sich über den Browser für GET-Anfragen oder über curl, Postman und Riders HTTP-Client testen.
+Das Skript startet PostgreSQL bei Bedarf und führt `dotnet test` aus. Die Tests verwenden die separate Datenbank `coatify_test` und verändern deren Daten dauerhaft. Hinweise zum Testaufbau stehen in [Coatify.Tests/README.md](Coatify.Tests/README.md).
 
 ## Lernplan
 
