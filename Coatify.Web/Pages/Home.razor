@@ -13,8 +13,32 @@ Welcome to your new app, made by Marcos.
 @code {
     private async Task GetADevice()
     {
-      var request = await HttpClient.GetAsync("http://localhost:5105/api/device/c477be02-183d-4b71-8adf-5e465d754cb0");
+      var request = await HttpClient.GetAsync("api/devices/all");
+      
+      if(!request.IsSuccessStatusCode) throw new Exception($"Request failed with status code: {request.StatusCode}");
       Console.WriteLine(request.Content.ReadAsStringAsync().Result);
         
     }
+}
+
+@code {
+
+    void SomeStartupMethod()
+    {
+        // Do Some Work
+    }
+
+    async Task<HttpResponseMessage> SomeStartupTask()
+    {
+        var request = await HttpClient.GetAsync("api/devices/all");
+        return !request.IsSuccessStatusCode ? throw new Exception($"Request failed with status code: {request.StatusCode}") : request;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        var listOfAllDevices = await SomeStartupTask();
+        Console.WriteLine(listOfAllDevices.Content.ReadAsStringAsync().Result);
+    }
+
 }

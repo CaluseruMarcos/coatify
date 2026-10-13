@@ -22,6 +22,7 @@ public class DevicesControllers : Controller
 
     public void MapRoutes(WebApplication app)
     {
+        
         app.MapGet("/api/devices", async (
             [FromQuery] Guid[] ids,
             IDeviceService deviceService) =>
@@ -33,6 +34,11 @@ public class DevicesControllers : Controller
 
             var devices = await deviceService.GetDevices(ids.ToList());
 
+            return Results.Ok(devices);
+        });
+        app.MapGet("/api/devices/all", async (IDeviceService deviceService) =>
+        {
+            var devices = await deviceService.GetAllDevices();
             return Results.Ok(devices);
         });
 

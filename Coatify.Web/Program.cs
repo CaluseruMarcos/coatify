@@ -5,8 +5,8 @@ using Coatify.Web;
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
-
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5105")});
+var baseUrl=builder.Configuration["Api:BaseUrl"] ?? throw new InvalidOperationException("BaseUrl is missing in appsettings.json");
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(baseUrl) });
 
 
 await builder.Build().RunAsync();
