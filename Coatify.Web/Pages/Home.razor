@@ -8,6 +8,7 @@
 <h1>Hello, world!</h1>
 
 Welcome to your new app, made by Marcos.
+<pre>@listOfAllDevices.Content.ReadAsStringAsync().Result</pre>
 <button @onclick="GetADevice">Click me</button>
 
 @code {
@@ -17,11 +18,13 @@ Welcome to your new app, made by Marcos.
       
       if(!request.IsSuccessStatusCode) throw new Exception($"Request failed with status code: {request.StatusCode}");
       Console.WriteLine(request.Content.ReadAsStringAsync().Result);
+      
         
     }
 }
 
 @code {
+    private HttpResponseMessage listOfAllDevices;
 
     void SomeStartupMethod()
     {
@@ -37,8 +40,9 @@ Welcome to your new app, made by Marcos.
     protected override async Task OnInitializedAsync()
     {
         
-        var listOfAllDevices = await SomeStartupTask();
+        listOfAllDevices = await SomeStartupTask();
         Console.WriteLine(listOfAllDevices.Content.ReadAsStringAsync().Result);
+        
     }
 
 }
