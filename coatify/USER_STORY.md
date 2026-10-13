@@ -26,7 +26,8 @@ Die folgenden Angaben beschreiben implementiertes Verhalten, nicht nur vorhanden
 | Validierung, Logging und Fehlerbehandlung | Teilweise | Pflichtfelder und Gerätetyp werden teilweise geprüft; Duplikate verlassen sich auf den DB-Index. `ILogger` und ein zentraler Handler sind da, aber `GetDevice` dereferenziert beim Fehlen `null` und führt so zu 500 statt 404. |
 | PostgreSQL/EF Core | Teilweise | Context, lokale Compose-Datenbank, Beziehungen, Indizes und `InitialCreate` sind da; die zweite Beispielmigration (`Location`) und ein geprüfter Neuaufbau aus Migrationen fehlen. |
 | xUnit und Testdatenbank | Teilweise | xUnit und `coatify_test` sind da; mehrere Tests greifen direkt auf EF Core zu, nutzen gemeinsame Daten und prüfen Service/API-Fälle nicht ausreichend. |
-| Blazor, Entra ID und Rollen | Noch nicht umgesetzt | Keine Oberfläche, Anmeldung oder Autorisierungsregeln im Code. |
+| Blazor | Teilweise | `Coatify.Web` ist als .NET-10-Blazor-WebAssembly-Projekt angelegt; Home, Navigation und NotFound sind noch Template-Seiten. Das Projekt ist noch nicht Teil der Solution und ruft die Coatify-API nicht auf. |
+| Entra ID und Rollen | Noch nicht umgesetzt | Keine Anmeldung oder Autorisierungsregeln im Code. |
 | Docker/Azure-Deployment und Registry | Noch nicht umgesetzt | Nur PostgreSQL läuft lokal in Compose; kein API-Dockerfile und keine Azure-Bereitstellung. |
 | Managed Identity, Key Vault, Networking, Azure PostgreSQL, Cosmos DB, IoT Hub, Worker, Application Insights, Grafana, Bicep, Azure DevOps, Artifacts | Noch nicht umgesetzt | Keine entsprechenden Ressourcen, Konfigurationen oder Pipelines im Repository. |
 | Architektur- und Bereitstellungsdokumentation | Teilweise | README erklärt lokalen Start; Cloud-Architektur, Kosten, Bereinigung und reproduzierbarer Deploy fehlen. |
@@ -812,19 +813,121 @@ Ergänze echte `DeviceService`-Tests für CRUD, Validierung, Duplikate und fehle
 
 # 19. Blazor-Oberfläche
 
-## User Story
+`Coatify.Web` existiert bereits als eigenständiges Blazor-WebAssembly-Projekt mit `App.razor`, `Home.razor`, `NotFound.razor`, `MainLayout.razor` und `NavMenu.razor`. Diese Dateien sind ein Startpunkt, aber noch keine Fachoberfläche. Die folgenden Stories sind in der Reihenfolge zu bearbeiten; sie setzen die passenden Backend-Aufgaben aus 17 und 18 voraus. Blazor greift über HTTP auf die API zu, niemals direkt auf `CoatifyContext` oder PostgreSQL.
 
-**Als Administrator möchte ich Geräte und Messwerte im Browser sehen und Geräte bearbeiten können.**
+## 19.1 Web-Projekt und API-Verbindung vorbereiten
+
+### User Story
+
+**Als Entwickler möchte ich Web und API gemeinsam starten und bauen können, damit ich die Oberfläche gegen echte Endpunkte entwickle.**
 
 ### Aufgabe
 
-Baue eine kleine Blazor-WebAssembly-Oberfläche mit Geräteliste, Detailansicht, Formularen für Anlegen/Bearbeiten/Löschen und einer Messwertliste. Binde ausschließlich die tatsächlich vorhandenen Minimal APIs an und zeige Validierungsfehler verständlich an. Für die spätere Hauptvariante sollen die statischen UI-Dateien über dieselbe ASP.NET-Core-App ausgeliefert werden, damit kein zweiter Azure-Host nötig ist.
+Füge `Coatify.Web` zur Solution hinzu. Richte eine zentrale, per DI verwendete HTTP-Client-Klasse für Geräte und Messwerte ein. Die Basisadresse der API muss zwischen lokaler Entwicklung und Veröffentlichung konfigurierbar sein; der derzeitige `HttpClient` in `Coatify.Web/Program.cs` verwendet die Adresse der Web-App. Für zwei lokale Ports braucht die API eine gezielte CORS-Freigabe für den Web-Origin. Kläre das Listenverhalten von `GET /api/devices` und vereinheitliche zuerst die Gerätepfade in Aufgabe 17. Teile Request-/Response-Verträge nur dann in ein kleines gemeinsames Projekt aus, wenn dadurch keine Server- oder EF-Core-Abhängigkeiten im Browser landen.
 
-### Fertig wenn
+### Fertig wenn (DoD)
 
-* [ ] Der lokale Ablauf „Gerät anlegen → öffnen → Messwerte sehen → bearbeiten/löschen“ funktioniert im Browser.
-* [ ] Lade-, Leer- und Fehlerzustände sind erkennbar; API-Fehler werden nicht als Erfolg angezeigt.
-* [ ] Ein Build der Oberfläche und ein lokaler End-to-End-Durchlauf sind dokumentiert.
+* [ ] `dotnet build coatify.sln` baut auch `Coatify.Web`; Web und API starten lokal mit dokumentierten URLs.
+* [ ] Der API-Client hat eine einzige konfigurierbare Basisadresse; keine lokale URL ist in einer Razor-Seite fest codiert.
+* [ ] Ein erfolgreicher GET erreicht die echte Coatify-API; ein Ausfall wird als Fehler sichtbar, nicht als leere Liste.
+* [ ] CORS erlaubt nur die benötigten lokalen Origins; der Browser zeigt keinen CORS-Fehler.
+
+## 19.2 Navigation, Startseite und unbekannte Seiten
+
+### User Story
+
+**Als Benutzer möchte ich die Geräteverwaltung leicht finden und bei einem falschen Link zurückfinden.**
+
+### Aufgabe
+
+Ersetze die Platzhalter in `Home.razor`, `NavMenu.razor` und `MainLayout.razor` durch Coatify-Texte und Links zur Geräteliste. Gestalte `NotFound.razor` mit einer verständlichen Meldung und einem Link zurück zur Startseite. Unterscheide eine unbekannte Web-Route von einem `404` für eine Geräte-ID: Die erste zeigt `NotFound.razor`, die zweite einen Fehlerzustand der Detailseite.
+
+### Fertig wenn (DoD)
+
+* [ ] Startseite und Menü führen mit Blazor-Navigation zur Geräteliste; der Menüpunkt zeigt den aktiven Zustand.
+* [ ] Eine unbekannte URL zeigt die NotFound-Seite mit funktionierendem Rückweg.
+* [ ] Die Menübedienung funktioniert per Tastatur und auf schmalem Bildschirm; Template-Bezeichnungen wie „Coatify.Web“/„About“ sind ersetzt.
+
+## 19.3 Geräteliste
+
+### User Story
+
+**Als Administrator möchte ich vorhandene Geräte sehen und eines zur Detailansicht öffnen.**
+
+### Aufgabe
+
+Erstelle eine Listenseite mit Gerätename, Status und einem Link zum Gerät. `GET /api/devices` muss dafür eine normale Liste ohne vorher bekannte IDs liefern; die aktuelle API fordert `ids` und kann diese Story so noch nicht erfüllen. Zeige Laden, keine Geräte und API-Fehler getrennt an. Ein erneuter Aufruf soll den aktuellen Stand zeigen.
+
+### Fertig wenn (DoD)
+
+* [ ] Die Seite zeigt die vom API-Response gelieferten Geräte und öffnet per Link die richtige ID.
+* [ ] Eine leere Datenbank zeigt „Noch keine Geräte“; ein Netzwerk-/Serverfehler zeigt eine Fehlermeldung und eine Wiederholen-Aktion.
+* [ ] Nach Anlegen oder Löschen ist die Liste ohne Browser-Neustart aktuell.
+
+## 19.4 Gerätedetails und Messwerte
+
+### User Story
+
+**Als Administrator möchte ich ein Gerät und seine Messwerte sehen, um seinen Zustand zu prüfen.**
+
+### Aufgabe
+
+Erstelle eine Detailroute mit Geräte-ID. Lade Gerät und Messwerte über `GET /api/devices/{id}` und `GET /api/devices/{id}/measurements`. Der Messwerte-Endpunkt und ein passendes Response-DTO fehlen aktuell noch im Backend. Zeige Zeitstempel und Einheiten für Temperatur, Druck und Stromverbrauch verständlich an; sortiere Messwerte nachvollziehbar, zum Beispiel neueste zuerst. Behaupte keine Live-Aktualisierung, solange kein entsprechender Mechanismus gebaut wurde.
+
+### Fertig wenn (DoD)
+
+* [ ] Ein existierendes Gerät zeigt die richtigen Stammdaten und nur seine Messwerte.
+* [ ] Ein Gerät ohne Messwerte zeigt einen eigenen Leerzustand; eine unbekannte Geräte-ID zeigt einen 404-Zustand mit Rückweg zur Liste.
+* [ ] API-Ausfall, Laden und ungültige ID sind erkennbar; Zeitstempel und Maßeinheiten werden konsistent dargestellt.
+
+## 19.5 Gerät anlegen
+
+### User Story
+
+**Als Administrator möchte ich ein Gerät im Browser registrieren können.**
+
+### Aufgabe
+
+Baue ein Formular für `Name`, `SerialNumber`, `Status` und `DeviceTypeId`, passend zu `CreateDeviceRequest`. Für die Auswahl eines Gerätetyps braucht die UI einen lesbaren Gerätetyp-Endpunkt oder eine ausdrücklich dokumentierte, lokal vorbereitete Auswahl; eine frei erfundene ID ist keine nutzbare Lösung. Prüfe Pflichtfelder im Formular und zeige Validierungsantworten der API zusätzlich an. Sende `POST /api/devices` erst nach gültiger Eingabe.
+
+### Fertig wenn (DoD)
+
+* [ ] Ein gültiger Request erstellt genau ein Gerät; nach `201 Created` wird dessen Detailansicht geöffnet oder die Liste aktualisiert.
+* [ ] Leere Felder, ungültiger Gerätetyp und doppelte Seriennummer werden verständlich angezeigt; das Formular bleibt mit Eingaben erhalten.
+* [ ] Während des Sendens ist doppeltes Absenden verhindert; ein API-Fehler wird nicht als Erfolg dargestellt.
+
+## 19.6 Gerät bearbeiten und löschen
+
+### User Story
+
+**Als Administrator möchte ich Stammdaten ändern und ein Gerät bewusst entfernen können.**
+
+### Aufgabe
+
+Fülle das Bearbeitungsformular mit den aktuellen Werten und sende `PUT /api/devices/{id}`. Beachte, dass `DeviceResponse` derzeit nur ID, Name und Status enthält: Für `SerialNumber` und `DeviceTypeId` braucht die UI einen dafür geeigneten Detail-Response. Ergänze eine Löschaktion mit Bestätigung und rufe `DELETE /api/devices/{id}` auf. Die API soll bei Erfolg `204 No Content` liefern.
+
+### Fertig wenn (DoD)
+
+* [ ] Vorhandene Werte sind sichtbar; nach Speichern zeigt die Detailseite die vom Backend bestätigten Werte.
+* [ ] Bei ungültigen Daten oder `404` bleibt das Formular erhalten und zeigt eine passende Meldung.
+* [ ] Abbrechen löscht nichts; nach bestätigtem `204` ist das Gerät aus Liste und Detailnavigation entfernt.
+
+## 19.7 Qualität und Bereitstellung der Oberfläche
+
+### User Story
+
+**Als Entwickler möchte ich die wichtigsten Browser-Abläufe nach Änderungen verlässlich prüfen und die UI gemeinsam mit der API veröffentlichen.**
+
+### Aufgabe
+
+Teste mindestens Navigation/NotFound, Liste mit Leer- und Fehlerzustand, Anlegen mit Validierungsfehler, Detail mit/ohne Messwerte sowie Bearbeiten/Löschen gegen kontrollierte Testdaten. Dokumentiere lokale Starts und den Build. Plane das Veröffentlichen der Blazor-WebAssembly-Dateien über dieselbe ASP.NET-Core-App wie die API (Aufgabe 22), einschließlich Fallback für direkte Aufrufe von UI-Routen. Authentifizierung und Rollen aus Aufgabe 20 kommen danach hinzu; Browser-Validierung ersetzt keine serverseitige Prüfung.
+
+### Fertig wenn (DoD)
+
+* [ ] Automatisierte UI-/Komponententests decken die genannten Zustände ab; ein manueller Durchlauf prüft den gesamten Gerätefluss im Browser.
+* [ ] `dotnet build coatify.sln` und ein Release-Publish der Web-App gelingen; lokale Startschritte sind dokumentiert.
+* [ ] Nach dem Publish funktionieren Startseite, direkte Detail-URL, NotFound und API-Aufrufe unter einer gemeinsamen HTTPS-Adresse.
+* [ ] Keine Datenbank-Zugangsdaten oder Tokens sind im WebAssembly-Paket enthalten; Browsercode enthält nur öffentliche Konfiguration.
 
 ---
 

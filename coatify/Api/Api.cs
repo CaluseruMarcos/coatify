@@ -16,6 +16,14 @@ using coatify.Application.Interfaces;
         var builder = WebApplication.CreateBuilder(args);
         
         builder.Services.AddOpenApi();
+        // Cors settings for the web app
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("CoatifyWeb", policy =>
+                policy.WithOrigins("http://localhost:5217", "https://localhost:7152")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+        });
         builder.Services.AddDbContext<CoatifyContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("Coatify")
                 ?? throw new InvalidOperationException("Connection string Coatify is missing.")));
@@ -24,6 +32,7 @@ using coatify.Application.Interfaces;
         
         builder.Services.AddLogging();
         var app = builder.Build();
+        app.UseCors("CoatifyWeb");
         app.UseExceptionHandler(errorApp =>
         {
             errorApp.Run(async context =>
