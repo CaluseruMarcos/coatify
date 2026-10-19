@@ -45,7 +45,9 @@ Das Projekt befindet sich im Aufbau und verwendet .NET 10, ASP.NET Core, EF Core
 
 Die erste EF-Core-Migration beschreibt das Datenbankschema. Das Testprojekt enthält unter anderem einen Datenbanktest für `CreateDevice` und zwei Testfälle für `DeviceService.GetDevice`. Weitere Tests und Teile der Fehlerbehandlung sind noch im Aufbau.
 
-Blazor für eine Benutzeroberfläche und Azure sollen später folgen.
+Seit einiger Zeit gibt es zusätzlich ein separates Blazor-WebAssembly-Frontend unter `Coatify.Web/`. Das Web-Client-Projekt darf nicht direkt auf das Serverprojekt `coatify/` verweisen; die gemeinsame Datenstruktur sollte in einem eigenen Shared-/Contracts-Projekt oder als klar getrennte API-DTOs gepflegt werden. Dadurch bleiben Browser- und Servercode sauber getrennt.
+
+Azure und weitere UI-Features sollen später folgen.
 
 ## Lokal starten
 
