@@ -1,0 +1,23 @@
+@namespace Coatify.Web.Components
+@using Coatify.Shared
+@using Microsoft.AspNetCore.Components.QuickGrid
+<h3>MachinesTable</h3>
+@if (Devices.Count > 0)
+{
+    <QuickGrid Items="Devices.AsQueryable()">
+        <PropertyColumn Property="@(d => d.Id)" Title="Id" />
+        <PropertyColumn Property="@(d => d.Name)" Title="Name" />
+        <PropertyColumn Property="@(d => d.Status)" Title="Status" />
+    </QuickGrid>
+}
+else
+{
+    <p>No devices</p>
+}
+
+
+@code {
+    
+    [Parameter]
+   public List<DeviceResponse> Devices{ get; set; }
+}
