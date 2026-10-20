@@ -1,4 +1,4 @@
-# Lokale Entwicklungsdatenbank: docker compose up -d
+# Lokale Entwicklungsumgebung: docker compose up -d
 services:
   postgres:
     image: postgres:17
@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-  
+
   dotnet-api:
     build:
       context: .
@@ -25,17 +25,33 @@ services:
     ports:
       - "127.0.0.1:5000:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Coatify: Host=postgres;Port=5432;Database=coatify;Username=coatify;Password=coatify
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/health" ]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-   
-  
-      
+
+  dotnet-web:
+    build:
+      context: .
+      dockerfile: Coatify.Web/Dockerfile
+    ports:
+      - "127.0.0.1:5001:8080"
+    depends_on:
+      dotnet-api:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

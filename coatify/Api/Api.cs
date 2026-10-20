@@ -16,11 +16,15 @@ using coatify.Application.Interfaces;
         var builder = WebApplication.CreateBuilder(args);
         
         builder.Services.AddOpenApi();
+        builder.Services.AddHealthChecks();
         // Cors settings for the web app
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("CoatifyWeb", policy =>
-                policy.WithOrigins("http://localhost:5217", "https://localhost:7152")
+                policy.WithOrigins(
+                        "http://localhost:5001",
+                        "http://localhost:5217",
+                        "https://localhost:7152")
                     .AllowAnyHeader()
                     .AllowAnyMethod());
         });
@@ -33,6 +37,7 @@ using coatify.Application.Interfaces;
         builder.Services.AddLogging();
         var app = builder.Build();
         app.UseCors("CoatifyWeb");
+        app.MapHealthChecks("/health");
         app.UseExceptionHandler(errorApp =>
         {
             errorApp.Run(async context =>
