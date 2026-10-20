@@ -23,39 +23,33 @@ public class DevicesControllers : Controller
     public void MapRoutes(WebApplication app)
     {
         
-        app.MapGet("/api/devices", async (
-            [FromQuery] Guid[] ids,
-            IDeviceService deviceService) =>
-        {
-            if (ids.Length == 0)
-            {
-                return Results.BadRequest("Mindestens eine ID angeben.");
-            }
-
-            var devices = await deviceService.GetDevices(ids.ToList());
-
-            return Results.Ok(devices);
-        });
-        app.MapGet("/api/devices/all", async (IDeviceService deviceService) =>
+        app.MapGet("/api/devices", async (IDeviceService deviceService) =>
         {
             var devices = await deviceService.GetAllDevices();
             return Results.Ok(devices);
         });
 
-        app.MapGet("/api/device/{id}", async (Guid id, IDeviceService deviceService) =>
+        app.MapGet("/api/devices/{id}", async (Guid id, IDeviceService deviceService) =>
         {
-            
-           var devicesById= await deviceService.GetDevice(id);
-           
-            return Results.Ok(devicesById);
+            return Results.Ok(await deviceService.GetDeviceDetails(id));
         });
 
-        app.MapPost("/api/device", async (
+        app.MapGet("/api/devices/{id}/measurements", async (Guid id, IDeviceService deviceService) =>
+        {
+            return Results.Ok(await deviceService.GetMeasurements(id));
+        });
+
+        app.MapGet("/api/device-types", async (IDeviceService deviceService) =>
+        {
+            return Results.Ok(await deviceService.GetDeviceTypes());
+        });
+
+        app.MapPost("/api/devices", async (
             [FromBody] CreateDeviceRequest request,
             IDeviceService deviceService) =>
         {
             var device = await deviceService.CreateDevice(request);
-            return Results.Created($"/api/device/{device.Id}", device);
+            return Results.Created($"/api/devices/{device.Id}", device);
         });
 
         app.MapPut("/api/devices/{id}", async (
@@ -67,10 +61,10 @@ public class DevicesControllers : Controller
             return Results.Ok(device);
         });
 
-        app.MapDelete("/api/device/{id}", async (Guid id, IDeviceService deviceService) =>
+        app.MapDelete("/api/devices/{id}", async (Guid id, IDeviceService deviceService) =>
         {
-            var devices = await deviceService.DeleteDevice(id);
-            return Results.Ok(devices);
+            await deviceService.DeleteDevice(id);
+            return Results.NoContent();
         });
 
        

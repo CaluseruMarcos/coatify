@@ -1,0 +1,114 @@
+@page "/details/{DeviceId:guid}"
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+@using Coatify.Shared
+
+<PageTitle>Gerätedetails</PageTitle>
+<NavLink href="/">Zurück zur Liste</NavLink>
+
+@if (loading)
+{
+    <p>Laden...</p>
+}
+else if (notFound)
+{
+    <p role="alert">Gerät nicht gefunden.</p>
+}
+else if (errorMessage is not null)
+{
+    <p role="alert">@errorMessage</p>
+    <button @onclick="LoadDevice">Wiederholen</button>
+}
+else if (device is not null)
+{
+    <h1>@device.Name</h1>
+    <p>Seriennummer: @device.SerialNumber</p>
+    <p>Status: @device.Status</p>
+    <p>Gerätetyp: @device.DeviceTypeName</p>
+    <NavLink href="@($"/devices/{DeviceId}/edit")">Bearbeiten</NavLink>
+    <button @onclick="DeleteDevice">Löschen</button>
+
+    <h2>Messwerte</h2>
+    @if (measurements is { Count: 0 })
+    {
+        <p>Noch keine Messwerte.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var measurement in measurements ?? [])
+            {
+                <li>
+                    @measurement.Timestamp.ToLocalTime():g:
+                    Temperatur @measurement.Temperature °C,
+                    Druck @measurement.Pressure bar,
+                    Stromverbrauch @measurement.PowerConsumption kWh
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter] public Guid DeviceId { get; set; }
+    private DeviceDetailResponse? device;
+    private List<MeasurementResponse>? measurements;
+    private string? errorMessage;
+    private bool loading;
+    private bool notFound;
+
+    protected override Task OnInitializedAsync() => LoadDevice();
+
+    private async Task LoadDevice()
+    {
+        loading = true;
+        errorMessage = null;
+        notFound = false;
+        try
+        {
+            using var deviceResponse = await HttpClient.GetAsync($"api/devices/{DeviceId}");
+            if (deviceResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                notFound = true;
+                return;
+            }
+
+            if (!deviceResponse.IsSuccessStatusCode)
+            {
+                errorMessage = "Die Gerätedaten konnten nicht geladen werden.";
+                return;
+            }
+
+            device = await deviceResponse.Content.ReadFromJsonAsync<DeviceDetailResponse>();
+            using var measurementsResponse = await HttpClient.GetAsync($"api/devices/{DeviceId}/measurements");
+            if (!measurementsResponse.IsSuccessStatusCode)
+            {
+                errorMessage = "Die Messwerte konnten nicht geladen werden.";
+                return;
+            }
+
+            measurements = await measurementsResponse.Content.ReadFromJsonAsync<List<MeasurementResponse>>() ?? [];
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Das Gerät ist momentan nicht erreichbar.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task DeleteDevice()
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", "Gerät wirklich löschen?"))
+            return;
+
+        using var response = await HttpClient.DeleteAsync($"api/devices/{DeviceId}");
+        if (response.IsSuccessStatusCode)
+            Navigation.NavigateTo("/");
+        else
+            errorMessage = "Das Gerät konnte nicht gelöscht werden.";
+    }
+}

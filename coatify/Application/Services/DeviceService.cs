@@ -2,6 +2,7 @@ using coatify.Application.Interfaces;
 using coatify.Infrastructure.DbContext;
 using coatify.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Coatify.Shared;
 
 namespace coatify.Application.Services;
 using coatify.Domain;
@@ -91,7 +92,7 @@ public class DeviceService : IDeviceService
         var device = await _dbContext.Devices.FindAsync(id)
                      ?? throw new KeyNotFoundException($"Device {id} was not found.");
 
-        await ValidateDeviceInput(request.Name, request.SerialNumber, request.Status, request.DeviceTypeId);
+        await ValidateDeviceInput(request.Name, request.SerialNumber, request.Status, request.DeviceTypeId, id);
 
         device.Name = request.Name;
         device.SerialNumber = request.SerialNumber;
@@ -105,7 +106,12 @@ public class DeviceService : IDeviceService
         return new DeviceResponse { Id = device.Id, Name = device.Name, Status = device.Status };
     }
 
-    private async Task ValidateDeviceInput(string name, string serialNumber, string status, Guid deviceTypeId)
+    private async Task ValidateDeviceInput(
+        string name,
+        string serialNumber,
+        string status,
+        Guid deviceTypeId,
+        Guid? deviceId = null)
     {
         if (string.IsNullOrWhiteSpace(name) ||
             string.IsNullOrWhiteSpace(serialNumber) ||
@@ -118,6 +124,12 @@ public class DeviceService : IDeviceService
             !await _dbContext.DeviceTypes.AnyAsync(type => type.Id == deviceTypeId))
         {
             throw new ArgumentException($"Device type {deviceTypeId} does not exist.");
+        }
+
+        if (await _dbContext.Devices.AnyAsync(device =>
+                device.SerialNumber == serialNumber && device.Id != deviceId))
+        {
+            throw new ArgumentException($"Serial number {serialNumber} is already in use.");
         }
     }
 
@@ -156,5 +168,50 @@ public class DeviceService : IDeviceService
         }).ToList();
         return Task.FromResult(devices);
 
+    }
+
+    public async Task<DeviceDetailResponse> GetDeviceDetails(Guid id)
+    {
+        var device = await _dbContext.Devices
+            .Include(d => d.DeviceType)
+            .FirstOrDefaultAsync(d => d.Id == id)
+            ?? throw new KeyNotFoundException($"Device {id} was not found.");
+
+        return new DeviceDetailResponse
+        {
+            Id = device.Id,
+            Name = device.Name,
+            SerialNumber = device.SerialNumber,
+            Status = device.Status,
+            DeviceTypeId = device.DeviceTypeId,
+            DeviceTypeName = device.DeviceType.Name
+        };
+    }
+
+    public async Task<List<MeasurementResponse>> GetMeasurements(Guid deviceId)
+    {
+        if (!await _dbContext.Devices.AnyAsync(d => d.Id == deviceId))
+            throw new KeyNotFoundException($"Device {deviceId} was not found.");
+
+        return await _dbContext.Measurements
+            .Where(m => m.DeviceId == deviceId)
+            .OrderByDescending(m => m.Timestamp)
+            .Select(m => new MeasurementResponse
+            {
+                Id = m.Id,
+                Timestamp = m.Timestamp,
+                Temperature = m.Temperature,
+                Pressure = m.Pressure,
+                PowerConsumption = m.PowerConsumption
+            })
+            .ToListAsync();
+    }
+
+    public Task<List<DeviceTypeResponse>> GetDeviceTypes()
+    {
+        return _dbContext.DeviceTypes
+            .OrderBy(type => type.Name)
+            .Select(type => new DeviceTypeResponse { Id = type.Id, Name = type.Name })
+            .ToListAsync();
     }
 }

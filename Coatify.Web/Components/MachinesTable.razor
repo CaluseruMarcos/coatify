@@ -1,14 +1,21 @@
 @namespace Coatify.Web.Components
 @using Coatify.Shared
-@using Microsoft.AspNetCore.Components.QuickGrid
 <h3>MachinesTable</h3>
+<h4>
+    Available Devices: @Devices.Count
+</h4>
 @if (Devices.Count > 0)
 {
-    <QuickGrid Items="Devices.AsQueryable()">
-        <PropertyColumn Property="@(d => d.Id)" Title="Id" />
-        <PropertyColumn Property="@(d => d.Name)" Title="Name" />
-        <PropertyColumn Property="@(d => d.Status)" Title="Status" />
-    </QuickGrid>
+    foreach (var device in Devices)
+    {
+        <div>
+            <NavLink href="@($"/details/{device.Id}")">
+                <h5>@device.Name</h5>
+            </NavLink>
+            <span>@device.Status</span>
+        </div>
+        
+    }
 }
 else
 {
@@ -17,7 +24,6 @@ else
 
 
 @code {
-    
     [Parameter]
-   public List<DeviceResponse> Devices{ get; set; }
+    public List<DeviceResponse> Devices { get; set; } = [];
 }

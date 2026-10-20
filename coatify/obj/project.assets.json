@@ -668,6 +668,16 @@
         "build": {
           "buildTransitive/net8.0/_._": {}
         }
+      },
+      "Coatify.Shared/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "compile": {
+          "bin/placeholder/Coatify.Shared.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Coatify.Shared.dll": {}
+        }
       }
     }
   },
@@ -2196,10 +2206,16 @@
         "system.composition.typedparts.nuspec",
         "useSharedDesignerContext.txt"
       ]
+    },
+    "Coatify.Shared/1.0.0": {
+      "type": "project",
+      "path": "../Coatify.Shared/Coatify.Shared.csproj",
+      "msbuildProject": "../Coatify.Shared/Coatify.Shared.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net10.0": [
+      "Coatify.Shared >= 1.0.0",
       "Microsoft.AspNetCore.OpenApi >= 10.0.12",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.12",
       "Npgsql >= 10.0.3",
@@ -2232,7 +2248,11 @@
         "net10.0": {
           "framework": "net10.0",
           "targetAlias": "net10.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/home/marcos/Desktop/projects/c#-expermiental/coatify/Coatify.Shared/Coatify.Shared.csproj": {
+              "projectPath": "/home/marcos/Desktop/projects/c#-expermiental/coatify/Coatify.Shared/Coatify.Shared.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

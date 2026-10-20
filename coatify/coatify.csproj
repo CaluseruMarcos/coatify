@@ -17,6 +17,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Coatify.Shared\Coatify.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <_ContentIncludedByDefault Remove="Coatify.Tests\obj\Coatify.Tests.csproj.nuget.dgspec.json" />
       <_ContentIncludedByDefault Remove="Coatify.Tests\obj\project.assets.json" />
     </ItemGroup>

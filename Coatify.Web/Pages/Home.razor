@@ -1,47 +1,59 @@
-﻿@page "/"
+@page "/"
 @inject HttpClient HttpClient
 @using Coatify.Shared
 @using Coatify.Web.Components
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Geräte</PageTitle>
+<h1>Geräte</h1>
+<NavLink href="/devices/new">Gerät anlegen</NavLink>
 
-<h1>Welcome to the Home Page of Coatify</h1>
-
-
-Welcome to your new app, made by Marcos.
-@if (allDevicesContent is null)
+@if (loading)
 {
-    <p>Loading devices...</p>
+    <p>Laden...</p>
 }
-else
+else if (errorMessage is not null)
 {
-    <MachinesTable Devices="@allDevicesContent"/>
+    <p role="alert">@errorMessage</p>
+    <button @onclick="LoadDevices">Wiederholen</button>
 }
-<button @onclick="GetADevice">Click me</button>
-
+else if (devices is { Count: 0 })
+{
+    <p>Noch keine Geräte</p>
+}
+else if (devices is not null)
+{
+    <MachinesTable Devices="devices" />
+}
 
 @code {
-    private async Task<List<DeviceResponse>> GetADevice()
-    {
-        return await GetAllDevicesContent();
-    }
+    private List<DeviceResponse>? devices;
+    private string? errorMessage;
+    private bool loading;
 
-    protected override async Task OnInitializedAsync()
-    {
-        allDevicesContent = await GetAllDevicesContent();
-    }
+    protected override Task OnInitializedAsync() => LoadDevices();
 
-    private async Task<List<DeviceResponse>> GetAllDevicesContent()
+    private async Task LoadDevices()
     {
-        using var response = await HttpClient.GetAsync("api/devices/all");
-
-        if (!response.IsSuccessStatusCode)
+        loading = true;
+        errorMessage = null;
+        try
         {
-            throw new HttpRequestException($"Request failed with status code: {response.StatusCode}");
+            using var response = await HttpClient.GetAsync("api/devices");
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = $"Die Geräteliste konnte nicht geladen werden ({(int)response.StatusCode}).";
+                return;
+            }
+
+            devices = await response.Content.ReadFromJsonAsync<List<DeviceResponse>>() ?? [];
         }
-
-        return await response.Content.ReadFromJsonAsync<List<DeviceResponse>>();
+        catch (HttpRequestException)
+        {
+            errorMessage = "Die Geräteliste ist momentan nicht erreichbar.";
+        }
+        finally
+        {
+            loading = false;
+        }
     }
-
-    private List<DeviceResponse>? allDevicesContent;
 }

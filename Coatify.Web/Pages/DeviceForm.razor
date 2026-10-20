@@ -1,0 +1,139 @@
+@page "/devices/new"
+@page "/devices/{DeviceId:guid}/edit"
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@using Coatify.Shared
+
+<PageTitle>@(IsEdit ? "Gerät bearbeiten" : "Gerät anlegen")</PageTitle>
+<h1>@(IsEdit ? "Gerät bearbeiten" : "Gerät anlegen")</h1>
+
+<EditForm Model="form" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <label>Name <InputText @bind-Value="form.Name" /></label>
+    <label>Seriennummer <InputText @bind-Value="form.SerialNumber" /></label>
+    <label>Status <InputText @bind-Value="form.Status" /></label>
+    <label>Gerätetyp
+        <InputSelect @bind-Value="form.DeviceTypeId">
+            <option value="">Bitte auswählen</option>
+            @foreach (var type in deviceTypes)
+            {
+                <option value="@type.Id">@type.Name</option>
+            }
+        </InputSelect>
+    </label>
+    @if (errorMessage is not null)
+    {
+        <p role="alert">@errorMessage</p>
+    }
+    <button type="submit" disabled="@saving">@(saving ? "Speichern..." : "Speichern")</button>
+    <NavLink href="@CancelUrl">Abbrechen</NavLink>
+</EditForm>
+
+@code {
+    [Parameter] public Guid? DeviceId { get; set; }
+    private DeviceFormModel form = new();
+    private List<DeviceTypeResponse> deviceTypes = [];
+    private string? errorMessage;
+    private bool saving;
+    private bool IsEdit => DeviceId.HasValue;
+    private string CancelUrl => IsEdit ? $"/details/{DeviceId}" : "/";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var typesResponse = await HttpClient.GetAsync("api/device-types");
+        if (typesResponse.IsSuccessStatusCode)
+            deviceTypes = await typesResponse.Content.ReadFromJsonAsync<List<DeviceTypeResponse>>() ?? [];
+
+        if (!IsEdit)
+            return;
+
+        var response = await HttpClient.GetAsync($"api/devices/{DeviceId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var device = await response.Content.ReadFromJsonAsync<DeviceDetailResponse>();
+            if (device is not null)
+            {
+                form = new DeviceFormModel
+                {
+                    Name = device.Name,
+                    SerialNumber = device.SerialNumber,
+                    Status = device.Status,
+                    DeviceTypeId = device.DeviceTypeId
+                };
+            }
+        }
+        else
+        {
+            errorMessage = "Das Gerät konnte nicht geladen werden.";
+        }
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(form.Name) ||
+            string.IsNullOrWhiteSpace(form.SerialNumber) ||
+            string.IsNullOrWhiteSpace(form.Status) ||
+            form.DeviceTypeId == Guid.Empty)
+        {
+            errorMessage = "Name, Seriennummer, Status und Gerätetyp sind Pflichtfelder.";
+            return;
+        }
+
+        saving = true;
+        errorMessage = null;
+        try
+        {
+            HttpResponseMessage response;
+            if (IsEdit)
+            {
+                var update = new UpdateDeviceRequest
+                {
+                    Name = form.Name,
+                    SerialNumber = form.SerialNumber,
+                    Status = form.Status,
+                    DeviceTypeId = form.DeviceTypeId
+                };
+                response = await HttpClient.PutAsJsonAsync($"api/devices/{DeviceId}", update);
+            }
+            else
+            {
+                var create = new CreateDeviceRequest
+                {
+                    Name = form.Name,
+                    SerialNumber = form.SerialNumber,
+                    Status = form.Status,
+                    DeviceTypeId = form.DeviceTypeId
+                };
+                response = await HttpClient.PostAsJsonAsync("api/devices", create);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<DeviceResponse>();
+                Navigation.NavigateTo($"/details/{result?.Id}");
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Die Änderung konnte nicht gespeichert werden.";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private sealed class DeviceFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string SerialNumber { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public Guid DeviceTypeId { get; set; }
+    }
+}
