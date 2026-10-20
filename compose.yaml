@@ -17,6 +17,25 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+  
+  dotnet-api:
+    build:
+      context: .
+      dockerfile: coatify/Dockerfile
+    ports:
+      - "127.0.0.1:5000:8080"
+    depends_on:
+      - postgres
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+   
+  
+      
 
 volumes:
   postgres_data:

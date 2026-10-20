@@ -912,22 +912,177 @@ Fülle das Bearbeitungsformular mit den aktuellen Werten und sende `PUT /api/dev
 * [ ] Bei ungültigen Daten oder `404` bleibt das Formular erhalten und zeigt eine passende Meldung.
 * [ ] Abbrechen löscht nichts; nach bestätigtem `204` ist das Gerät aus Liste und Detailnavigation entfernt.
 
-## 19.7 Qualität und Bereitstellung der Oberfläche
+## 19.7 Qualität und Deployment vorbereiten
 
 ### User Story
 
-**Als Entwickler möchte ich die wichtigsten Browser-Abläufe nach Änderungen verlässlich prüfen und die UI gemeinsam mit der API veröffentlichen.**
+**Als Entwickler möchte ich die Anwendung vor dem Deployment prüfen, damit ich keine kaputte Version veröffentliche.**
 
 ### Aufgabe
 
-Teste mindestens Navigation/NotFound, Liste mit Leer- und Fehlerzustand, Anlegen mit Validierungsfehler, Detail mit/ohne Messwerte sowie Bearbeiten/Löschen gegen kontrollierte Testdaten. Dokumentiere lokale Starts und den Build. Plane das Veröffentlichen der Blazor-WebAssembly-Dateien über dieselbe ASP.NET-Core-App wie die API (Aufgabe 22), einschließlich Fallback für direkte Aufrufe von UI-Routen. Authentifizierung und Rollen aus Aufgabe 20 kommen danach hinzu; Browser-Validierung ersetzt keine serverseitige Prüfung.
+Prüfe den vollständigen Gerätefluss im Browser:
+
+```text
+Liste → Detailseite → Bearbeiten → Speichern → Zurück zur Liste
+Liste → Gerät anlegen → Detailseite
+Detailseite → Löschen → Liste
+```
+
+Prüfe außerdem Laden, leere Liste, API-Fehler, unbekannte Geräte-ID und fehlende Messwerte.
+
+### Kleine Hinweise
+
+* Starte API und Web-App lokal in zwei Terminals.
+* Nutze zunächst feste Testdaten in der lokalen PostgreSQL-Datenbank.
+* Öffne die Browser-Konsole, wenn Navigation oder API-Aufrufe nicht funktionieren.
+* Ein grüner Build bedeutet nicht automatisch, dass der Browserablauf korrekt ist.
 
 ### Fertig wenn (DoD)
 
-* [ ] Automatisierte UI-/Komponententests decken die genannten Zustände ab; ein manueller Durchlauf prüft den gesamten Gerätefluss im Browser.
-* [ ] `dotnet build coatify.sln` und ein Release-Publish der Web-App gelingen; lokale Startschritte sind dokumentiert.
-* [ ] Nach dem Publish funktionieren Startseite, direkte Detail-URL, NotFound und API-Aufrufe unter einer gemeinsamen HTTPS-Adresse.
-* [ ] Keine Datenbank-Zugangsdaten oder Tokens sind im WebAssembly-Paket enthalten; Browsercode enthält nur öffentliche Konfiguration.
+* [ ] Der komplette Gerätefluss funktioniert manuell im Browser.
+* [ ] Fehler- und Leerzustände sind sichtbar und verständlich.
+* [ ] `dotnet build coatify.sln` läuft erfolgreich.
+* [ ] Es gibt keine Zugangsdaten im WebAssembly-Code.
+
+## 19.8 Release-Build erstellen
+
+### User Story
+
+**Als Entwickler möchte ich einen Release-Build erstellen, damit die Anwendung für eine Veröffentlichung optimiert ist.**
+
+### Aufgabe
+
+Erstelle einen Release-Publish für die API und die Blazor-WebAssembly-App. Prüfe, welche Dateien im Ausgabeordner liegen und ob die UI zusammen mit der API ausgeliefert werden kann.
+
+### Kleine Hinweise
+
+* Verwende `dotnet publish -c Release`.
+* Prüfe den Ausgabeordner vor dem Deployment.
+* Teste den Release-Build lokal, bevor du Azure verwendest.
+* Konfiguriere die API-Basisadresse nicht fest in einer Razor-Seite.
+
+### Fertig wenn (DoD)
+
+* [ ] Der Release-Publish läuft ohne Fehler.
+* [ ] Die veröffentlichte App kann lokal gestartet werden.
+* [ ] Startseite, Detailroute und API-Aufrufe funktionieren im Release-Build.
+* [ ] Debug-Dateien und lokale Datenbank-Zugangsdaten werden nicht veröffentlicht.
+
+## 19.9 Docker-Image für die API
+
+### User Story
+
+**Als Entwickler möchte ich die API in einem Container starten können, damit die Laufzeit reproduzierbar ist.**
+
+### Aufgabe
+
+Erstelle ein `Dockerfile` für die API. Baue das Image in mehreren Schritten: zuerst kompilieren, danach nur die veröffentlichten Dateien in das kleinere Runtime-Image kopieren. Starte die API und verbinde sie mit PostgreSQL aus `compose.yaml`.
+
+### Kleine Hinweise
+
+* Verwende ein SDK-Image nur im Build-Schritt.
+* Verwende für den Betrieb ein ASP.NET-Runtime-Image.
+* Übergib die Connection-String-Konfiguration über Umgebungsvariablen.
+* Keine Passwörter in das Dockerfile schreiben.
+
+### Fertig wenn (DoD)
+
+* [ ] `docker build` erstellt das API-Image.
+* [ ] Der Container startet ohne manuelle Änderungen im Image.
+* [ ] Die API kann PostgreSQL erreichen.
+* [ ] Ein Health- oder einfacher GET-Aufruf antwortet aus dem Container.
+
+## 19.10 Azure-Ressourcen planen
+
+### User Story
+
+**Als Betreiber möchte ich die benötigten Azure-Ressourcen vorher planen, damit keine unerwarteten Kosten entstehen.**
+
+### Aufgabe
+
+Plane eine kleine Hauptvariante:
+
+```text
+Azure App Service für API und Blazor-WebAssembly
+Azure Database for PostgreSQL
+```
+
+Lege Region, Tarif, Datenbankgröße und eine persönliche Kostenobergrenze fest. Dokumentiere, welche Ressourcen dauerhaft laufen und welche nach dem Test gelöscht werden.
+
+### Kleine Hinweise
+
+* Prüfe zuerst das aktuelle Azure-for-Students-Guthaben.
+* Verwende nur eine Region und keine unnötigen Zusatzdienste.
+* Eine Budgetwarnung stoppt Ressourcen nicht automatisch.
+* Schreibe vor dem Anlegen auf, wie du alle Ressourcen wieder löschst.
+
+### Fertig wenn (DoD)
+
+* [ ] Ressourcen, Region und Tarife sind dokumentiert.
+* [ ] Eine aktuelle Preisschätzung ist vorhanden.
+* [ ] Eine Budgetwarnung ist eingerichtet oder die Einrichtung ist dokumentiert.
+* [ ] Es gibt einen klaren Löschplan.
+
+## 19.11 API und Datenbank bereitstellen
+
+### User Story
+
+**Als Benutzer möchte ich die Anwendung über HTTPS erreichen, damit ich Geräte sicher verwalten kann.**
+
+### Aufgabe
+
+Veröffentliche die API und die Blazor-Dateien in Azure App Service. Lege den PostgreSQL-Connection-String als App-Service-Konfiguration an und führe die EF-Core-Migrationen als eigenen Schritt aus. Verwende keine Secrets im Quellcode oder im Browser.
+
+### Kleine Hinweise
+
+* App-Service-Konfigurationen werden über `ConnectionStrings__Coatify` gesetzt.
+* Verwende TLS für die Datenbankverbindung.
+* `MigrateAsync()` gehört in einen kontrollierten Deployment-Schritt.
+* `EnsureCreatedAsync()` nicht zusätzlich zu migrationsbasierten Datenbanken verwenden.
+* Prüfe zuerst einen einfachen Health- oder GET-Endpunkt.
+
+### Fertig wenn (DoD)
+
+* [ ] Die veröffentlichte URL liefert die Web-Oberfläche.
+* [ ] API-Aufrufe funktionieren über HTTPS.
+* [ ] Eine neue Datenbank kann aus Migrationen aufgebaut werden.
+* [ ] Ein erneuter Deploy funktioniert ohne doppelte Migrationen.
+* [ ] Keine Secrets sind in Git oder im WebAssembly-Paket sichtbar.
+
+## 19.12 Deployment prüfen und wieder aufräumen
+
+### User Story
+
+**Als Entwickler möchte ich ein Deployment prüfen und danach sicher entfernen können, damit die Übung reproduzierbar und bezahlbar bleibt.**
+
+### Aufgabe
+
+Führe nach dem Deployment einen kurzen Abnahmetest durch:
+
+```text
+Startseite öffnen
+Geräteliste laden
+Detailseite öffnen
+Gerät anlegen
+Gerät bearbeiten
+Gerät löschen
+```
+
+Prüfe danach Logs und Fehler. Lösche Testressourcen, wenn sie nicht mehr benötigt werden.
+
+### Kleine Hinweise
+
+* Prüfe Browser, API-Logs und Datenbankstatus getrennt.
+* Teste nach einem App-Neustart erneut, damit Konfiguration geladen wird.
+* Dokumentiere URL, verwendete Version und bekannte Einschränkungen.
+* Lösche Ressourcen über eine Resource Group oder eine vorher dokumentierte Liste.
+
+### Fertig wenn (DoD)
+
+* [ ] Der Abnahmetest wurde erfolgreich durchgeführt.
+* [ ] Fehler und Einschränkungen sind dokumentiert.
+* [ ] Die Bereitstellung kann mit denselben Schritten wiederholt werden.
+* [ ] Nicht mehr benötigte kostenpflichtige Ressourcen sind gelöscht.
 
 ---
 
